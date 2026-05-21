@@ -392,6 +392,12 @@
         <h2>모양의 특징을 찾아요</h2>
       </div>
 
+      <div class="shape-select">
+        <button id="circleFeatureBtn" class="shape-btn" onclick="startFeatureQuiz('circle')">○ 동그라미</button>
+        <button id="triangleFeatureBtn" class="shape-btn" onclick="startFeatureQuiz('triangle')">△ 세모</button>
+        <button id="squareFeatureBtn" class="shape-btn" onclick="startFeatureQuiz('square')">□ 네모</button>
+      </div>
+
       <div class="question-box">
         <h2 id="featureQuestion">동그라미의 특징은 무엇일까요?</h2>
       </div>
@@ -464,7 +470,7 @@
     const celebration = document.getElementById('celebration');
 
     let currentQuiz = 'circle';
-    let currentFeatureQuiz = 0;
+    let currentFeatureQuiz = 'circle';
     let foundCount = 0;
     let audioContext;
 
@@ -495,26 +501,62 @@
       { name: '스마트폰', emoji: '📱', shape: 'square' }
     ];
 
-    const featureQuestions = [
-      {
-        shape: '○',
-        question: '동그라미의 특징은 무엇일까요?',
-        answer: '둥글다 / 모서리가 없다',
-        options: ['둥글다 / 모서리가 없다', '반듯한 선이 3개 있다', '반듯한 선이 4개 있다']
-      },
-      {
-        shape: '△',
-        question: '세모의 특징은 무엇일까요?',
-        answer: '반듯한 선이 3개 / 뾰족한 부분이 3개 있다',
-        options: ['모서리가 없다', '반듯한 선이 3개 / 뾰족한 부분이 3개 있다', '반듯한 선이 4개 / 뾰족한 부분이 4개 있다']
-      },
-      {
-        shape: '□',
-        question: '네모의 특징은 무엇일까요?',
-        answer: '반듯한 선이 4개 / 뾰족한 부분이 4개 있다',
-        options: ['둥글다', '반듯한 선이 3개 / 뾰족한 부분이 3개 있다', '반듯한 선이 4개 / 뾰족한 부분이 4개 있다']
-      }
-    ];
+    const featureQuestions = {
+      circle: [
+        {
+          question: '○ 동그라미에는 반듯한 선이 있다.',
+          answer: 'X'
+        },
+        {
+          question: '○ 동그라미에는 모서리가 없다.',
+          answer: 'O'
+        },
+        {
+          question: '○ 동그라미는 둥글다.',
+          answer: 'O'
+        },
+        {
+          question: '○ 동그라미에는 뾰족한 부분이 있다.',
+          answer: 'X'
+        }
+      ],
+      triangle: [
+        {
+          question: '△ 세모에는 반듯한 선이 3개 있다.',
+          answer: 'O'
+        },
+        {
+          question: '△ 세모에는 뾰족한 부분이 3개 있다.',
+          answer: 'O'
+        },
+        {
+          question: '△ 세모는 둥글다.',
+          answer: 'X'
+        },
+        {
+          question: '△ 세모에는 반듯한 선이 4개 있다.',
+          answer: 'X'
+        }
+      ],
+      square: [
+        {
+          question: '□ 네모에는 반듯한 선이 4개 있다.',
+          answer: 'O'
+        },
+        {
+          question: '□ 네모에는 뾰족한 부분이 4개 있다.',
+          answer: 'O'
+        },
+        {
+          question: '□ 네모는 둥글다.',
+          answer: 'X'
+        },
+        {
+          question: '□ 네모에는 모서리가 없다.',
+          answer: 'X'
+        }
+      ]
+    };
 
     function showScreen(id) {
       screens.forEach(screen => screen.classList.remove('active'));
@@ -527,26 +569,46 @@
       return [...array].sort(() => Math.random() - 0.5);
     }
 
+    let currentFeatureIndex = 0;
+
     function restartFeatureQuiz() {
-      currentFeatureQuiz = 0;
+      currentFeatureIndex = 0;
       renderFeatureQuiz();
     }
 
+    function startFeatureQuiz(shape) {
+      currentFeatureQuiz = shape;
+      currentFeatureIndex = 0;
+      updateActiveFeatureButton();
+      renderFeatureQuiz();
+    }
+
+    function updateActiveFeatureButton() {
+      ['circle', 'triangle', 'square'].forEach(shape => {
+        const button = document.getElementById(shape + 'FeatureBtn');
+        if (button) button.classList.toggle('active-shape', currentFeatureQuiz === shape);
+      });
+    }
+
     function renderFeatureQuiz() {
-      const questionData = featureQuestions[currentFeatureQuiz];
+      updateActiveFeatureButton();
+
+      const questionList = featureQuestions[currentFeatureQuiz];
+      const questionData = questionList[currentFeatureIndex];
+
       const featureQuestion = document.getElementById('featureQuestion');
       const featureOptions = document.getElementById('featureOptions');
       const featureFeedback = document.getElementById('featureFeedback');
 
-      featureQuestion.textContent = `${questionData.shape} ${questionData.question}`;
-      featureFeedback.textContent = '알맞은 특징을 눌러 보세요.';
+      featureQuestion.textContent = questionData.question;
+      featureFeedback.textContent = 'O 또는 X를 눌러 보세요.';
       featureFeedback.style.color = '#1f2937';
       featureOptions.innerHTML = '';
 
-      shuffle(questionData.options).forEach(option => {
+      ['O', 'X'].forEach(option => {
         const card = document.createElement('button');
         card.className = 'item-card';
-        card.innerHTML = `<div class="emoji">${questionData.shape}</div><div>${option}</div>`;
+        card.innerHTML = `<div class="emoji">${option}</div><div>${option}</div>`;
         card.onclick = () => checkFeatureAnswer(card, option === questionData.answer);
         featureOptions.appendChild(card);
       });
@@ -559,19 +621,21 @@
       if (isCorrect) {
         card.classList.add('correct');
         playDingDongDang();
-        featureFeedback.textContent = '맞아요! 모양의 특징을 잘 찾았어요.';
+        featureFeedback.textContent = '맞아요! 잘했어요.';
         featureFeedback.style.color = '#15803d';
 
         setTimeout(() => {
-          currentFeatureQuiz += 1;
-          if (currentFeatureQuiz >= featureQuestions.length) {
-            currentFeatureQuiz = 0;
-            featureFeedback.textContent = '모양의 특징을 모두 찾았어요!';
+          const questionList = featureQuestions[currentFeatureQuiz];
+          currentFeatureIndex += 1;
+
+          if (currentFeatureIndex >= questionList.length) {
+            currentFeatureIndex = 0;
             showCelebration('참 잘했어요!');
-          } else {
-            renderFeatureQuiz();
+            featureFeedback.textContent = '모든 문제를 맞혔어요!';
           }
-        }, 900);
+
+          renderFeatureQuiz();
+        }, 700);
       } else {
         card.classList.add('wrong');
         playWrongSound();
@@ -849,26 +913,47 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       setupLineStyle();
 
+      const randomBetween = (min, max) => Math.random() * (max - min) + min;
+
       if (currentDrawShape === 'circle') {
         dots = [
-          { x: canvas.width / 2, y: canvas.height / 2 }
+          {
+            x: randomBetween(canvas.width * 0.35, canvas.width * 0.65),
+            y: randomBetween(canvas.height * 0.35, canvas.height * 0.65)
+          }
         ];
       }
 
       if (currentDrawShape === 'triangle') {
+        const topX = randomBetween(canvas.width * 0.3, canvas.width * 0.7);
+        const topY = randomBetween(canvas.height * 0.12, canvas.height * 0.28);
+
+        const leftX = randomBetween(canvas.width * 0.12, canvas.width * 0.38);
+        const leftY = randomBetween(canvas.height * 0.58, canvas.height * 0.82);
+
+        const rightX = randomBetween(canvas.width * 0.62, canvas.width * 0.88);
+        const rightY = randomBetween(canvas.height * 0.5, canvas.height * 0.82);
+
         dots = [
-          { x: canvas.width / 2, y: canvas.height * 0.18 },
-          { x: canvas.width * 0.24, y: canvas.height * 0.78 },
-          { x: canvas.width * 0.76, y: canvas.height * 0.78 }
+          { x: topX, y: topY },
+          { x: leftX, y: leftY },
+          { x: rightX, y: rightY }
         ];
       }
 
       if (currentDrawShape === 'square') {
+        const left = randomBetween(canvas.width * 0.18, canvas.width * 0.32);
+        const top = randomBetween(canvas.height * 0.16, canvas.height * 0.3);
+        const width = randomBetween(canvas.width * 0.28, canvas.width * 0.42);
+        const height = randomBetween(canvas.height * 0.28, canvas.height * 0.42);
+
+        const skew = randomBetween(-40, 40);
+
         dots = [
-          { x: canvas.width * 0.28, y: canvas.height * 0.22 },
-          { x: canvas.width * 0.72, y: canvas.height * 0.22 },
-          { x: canvas.width * 0.72, y: canvas.height * 0.76 },
-          { x: canvas.width * 0.28, y: canvas.height * 0.76 }
+          { x: left + skew, y: top },
+          { x: left + width + skew, y: top + randomBetween(-20, 20) },
+          { x: left + width, y: top + height },
+          { x: left, y: top + height + randomBetween(-20, 20) }
         ];
       }
 
@@ -892,10 +977,21 @@
         const radius = Math.min(canvas.width, canvas.height) * 0.24;
         ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
       } else {
-        ctx.moveTo(dots[0].x, dots[0].y);
-        for (let i = 1; i < dots.length; i++) {
-          ctx.lineTo(dots[i].x, dots[i].y);
+        const centerX = dots.reduce((sum, dot) => sum + dot.x, 0) / dots.length;
+        const centerY = dots.reduce((sum, dot) => sum + dot.y, 0) / dots.length;
+
+        const orderedDots = [...dots].sort((a, b) => {
+          const angleA = Math.atan2(a.y - centerY, a.x - centerX);
+          const angleB = Math.atan2(b.y - centerY, b.x - centerX);
+          return angleA - angleB;
+        });
+
+        ctx.moveTo(orderedDots[0].x, orderedDots[0].y);
+
+        for (let i = 1; i < orderedDots.length; i++) {
+          ctx.lineTo(orderedDots[i].x, orderedDots[i].y);
         }
+
         ctx.closePath();
       }
 
@@ -1025,6 +1121,7 @@
       resizeCanvas();
       setupLineStyle();
       updateActiveQuizButton();
+      updateActiveFeatureButton();
       updateActiveDrawShapeButton();
       updateMakeShapeButton();
     }, 100);
